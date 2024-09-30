@@ -106,12 +106,12 @@ app.add_middleware(
 app.add_middleware(middlewares.OriginalHostMiddleware)
 
 from apps.business.routes import router as business_router
-from apps.zarinpal.routes import router as zarinpal_router
+from apps.ipg.routes import router as ipg_router
 
 app.include_router(
     business_router, prefix=f"{config.Settings.base_path}", include_in_schema=False
 )
-app.include_router(zarinpal_router, prefix=f"{config.Settings.base_path}")
+app.include_router(ipg_router, prefix=f"{config.Settings.base_path}")
 
 
 @app.get(f"{config.Settings.base_path}/health")

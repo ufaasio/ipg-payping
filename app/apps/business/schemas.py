@@ -5,8 +5,8 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from apps.base.auth_middlewares import JWTConfig
-from apps.base.schemas import OwnedEntitySchema
+from apps.business.auth_middlewares import JWTConfig
+from fastapi_mongo_base.schemas import OwnedEntitySchema
 from pydantic import BaseModel, Field, field_validator, model_validator
 from server.config import Settings
 

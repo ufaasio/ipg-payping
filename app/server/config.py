@@ -20,7 +20,7 @@ class Settings(metaclass=Singleton):
     mongo_uri: str = os.getenv("MONGO_URI", default="mongodb://mongo:27017/")
     project_name: str = os.getenv("PROJECT_NAME", default="fastapi")
     base_dir: Path = Path(__file__).resolve().parent.parent
-    base_path: str = "/api/v1/apps/zarinpal"
+    base_path: str = "/api/v1/apps/payping"
     page_max_limit: int = 100
     currency: str = "IRR"
 

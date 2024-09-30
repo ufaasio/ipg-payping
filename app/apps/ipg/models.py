@@ -2,11 +2,11 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from apps.base.models import BusinessOwnedEntity
+from fastapi_mongo_base.models import BusinessOwnedEntity
 from pydantic import field_serializer, field_validator
 from utils import numtools
 
-from .config import ZarinpalConfig
+from .config import PayPingConfig
 from .schemas import PurchaseStatus
 
 
@@ -21,7 +21,7 @@ class Purchase(BusinessOwnedEntity):
     is_test: bool = False
     status: PurchaseStatus = PurchaseStatus.INIT
 
-    authority: str | None = None
+    code: str | None = None
 
     failure_reason: str | None = None
     verified_at: datetime | None = None
@@ -40,11 +40,11 @@ class Purchase(BusinessOwnedEntity):
         return str(value)
 
     @classmethod
-    async def get_purchase_by_authority(cls, business_name: str, authority: str):
+    async def get_purchase_by_code(cls, business_name: str, code: str):
         return await cls.find_one(
             cls.is_deleted == False,
             cls.business_name == business_name,
-            cls.authority == authority,
+            cls.code == code,
         )
 
     async def success(self, ref_id: int):
@@ -60,7 +60,7 @@ class Purchase(BusinessOwnedEntity):
 
     @property
     def config(self):
-        return ZarinpalConfig(test=self.is_test)
+        return PayPingConfig()
 
     @property
     def is_successful(self):
@@ -68,4 +68,4 @@ class Purchase(BusinessOwnedEntity):
 
     @property
     def start_payment_url(self):
-        return f"{self.config.start_payment_url}/{self.authority}"
+        return self.config.payment_request_url(self.code)

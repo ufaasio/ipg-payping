@@ -1,12 +1,12 @@
 services:  
-  ipg-zarinpal:
+  ipg-payping:
     build: app
     restart: unless-stopped
-    # command: python app.py
+    command: python app.py
     expose:
       - 8000
-    ports:
-      - 3021:3000
+    # ports:
+    #   - 3021:3000
     env_file:
       - .env
     volumes:

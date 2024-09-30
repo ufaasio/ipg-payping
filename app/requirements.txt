@@ -15,3 +15,4 @@ usso
 
 beanie
 fastapi-mongo-base
+python-multipart

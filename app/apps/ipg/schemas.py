@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Literal
 
-from apps.base.schemas import BusinessOwnedEntitySchema
+from fastapi_mongo_base.schemas import BusinessOwnedEntitySchema
 from pydantic import BaseModel, field_serializer, field_validator
 from utils import numtools, texttools
 
@@ -27,7 +27,7 @@ class PurchaseSchema(BusinessOwnedEntitySchema):
     is_test: bool = False
     status: PurchaseStatus = PurchaseStatus.INIT
 
-    authority: str | None = None
+    code: str | None = None
 
     failure_reason: str | None = None
     verified_at: datetime | None = None

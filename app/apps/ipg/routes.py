@@ -2,13 +2,13 @@ import logging
 import uuid
 from decimal import Decimal
 
-from apps.base.auth_middlewares import Usso
+from apps.business.auth_middlewares import Usso
 from apps.business.middlewares import get_business
 from apps.business.routes import AbstractAuthRouter
-from fastapi import Request
+from fastapi import Form, Request
 from fastapi.responses import RedirectResponse
 
-from .models import Purchase
+from .models import Purchase, PurchaseStatus
 from .schemas import PurchaseCreateSchema, PurchaseSchema
 from .services import create_proposal, start_purchase, verify_purchase
 
@@ -51,8 +51,7 @@ class PurchaseRouter(AbstractAuthRouter[Purchase, PurchaseSchema]):
         self.router.add_api_route(
             "/{uid:uuid}/verify",
             self.verify_purchase,
-            methods=["GET"],
-            # response_model=self.retrieve_response_schema,
+            methods=["POST"],
         )
 
     async def create_item(self, request: Request, item: PurchaseCreateSchema):
@@ -67,7 +66,10 @@ class PurchaseRouter(AbstractAuthRouter[Purchase, PurchaseSchema]):
             user = None
             logging.warning(f"create item not user: {e}")
 
-        user_id = user.user_id if user else business.user_id
+        user_id = user.uid if user else business.user_id
+        if user and user.phone and not item.phone:
+            item.phone = user.phone
+        logging.info(f"create item: {user_id=}")
 
         item = self.model(
             business_name=business.name,
@@ -111,26 +113,40 @@ class PurchaseRouter(AbstractAuthRouter[Purchase, PurchaseSchema]):
         if start_data["status"]:
             return RedirectResponse(url=item.start_payment_url)
 
+    from pydantic import BaseModel
+
+    class VerifyResponse(BaseModel):
+        code: str
+        refid: str
+        clientrefid: str | None = None
+        cardnumber: str | None = None
+        cardhashpan: str | None = None
+
     async def verify_purchase(
-        self, request: Request, uid: uuid.UUID, Status: str, Authority: str
+        self,
+        request: Request,
+        uid: uuid.UUID,
+        verify_response: VerifyResponse = Form(),
     ):
         try:
             business = await get_business(request)
 
             item: Purchase = await self.get_item(uid, business_name=business.name)
-            if item.status != "PENDING":
-                return RedirectResponse(url=item.callback_url)
+            if item.status != PurchaseStatus.PENDING:
+                return RedirectResponse(url=item.callback_url, status_code=303)
 
             purchase = await verify_purchase(
-                business=business, item=item, status=Status, authority=Authority
+                business=business, item=item, **verify_response.model_dump()
             )
 
-            if purchase.status == "FAILED":
-                return RedirectResponse(url=purchase.callback_url)
+            if purchase.status == PurchaseStatus.SUCCESS:
+                await create_proposal(purchase, business)
+                # pass
 
-            await create_proposal(purchase, business)
-
-            return RedirectResponse(url=purchase.callback_url)
+            return RedirectResponse(
+                url=f"{purchase.callback_url}?success={purchase.is_successful}",
+                status_code=303,
+            )
         except Exception as e:
             logging.error(f"verify error: {e}")
             raise e

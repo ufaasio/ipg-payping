@@ -1,11 +1,11 @@
 import uuid
 from typing import TypeVar
 
-from apps.base.handlers import create_dto
-from apps.base.models import BusinessEntity
-from apps.base.routes import AbstractBaseRouter
-from apps.base.schemas import BusinessEntitySchema, PaginatedResponse
 from fastapi import Depends, Query, Request
+from fastapi_mongo_base.handlers import create_dto
+from fastapi_mongo_base.models import BusinessEntity
+from fastapi_mongo_base.routes import AbstractBaseRouter
+from fastapi_mongo_base.schemas import BusinessEntitySchema, PaginatedResponse
 from server.config import Settings
 from usso.fastapi import jwt_access_security
 
