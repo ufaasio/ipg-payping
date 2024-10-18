@@ -2,11 +2,11 @@ import logging
 import uuid
 from decimal import Decimal
 
-from apps.business.auth_middlewares import Usso
-from apps.business.middlewares import get_business
-from apps.business.routes import AbstractAuthRouter
 from fastapi import Form, Request
 from fastapi.responses import RedirectResponse
+from ufaas_fastapi_business.middlewares import get_business
+from ufaas_fastapi_business.routes import AbstractAuthRouter
+from usso.fastapi.auth_middleware import Usso
 
 from .models import Purchase, PurchaseStatus
 from .schemas import PurchaseCreateSchema, PurchaseSchema
@@ -141,13 +141,13 @@ class PurchaseRouter(AbstractAuthRouter[Purchase, PurchaseSchema]):
 
             if purchase.status == PurchaseStatus.SUCCESS:
                 await create_proposal(purchase, business)
-                # pass
-
+            
             return RedirectResponse(
                 url=f"{purchase.callback_url}?success={purchase.is_successful}",
                 status_code=303,
             )
         except Exception as e:
+            purchase.save_report(f"verify error: {e}")
             logging.error(f"verify error: {e}")
             raise e
 

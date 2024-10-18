@@ -105,12 +105,10 @@ app.add_middleware(
 
 app.add_middleware(middlewares.OriginalHostMiddleware)
 
-from apps.business.routes import router as business_router
+from apps.config.routes import router as config_router
 from apps.ipg.routes import router as ipg_router
 
-app.include_router(
-    business_router, prefix=f"{config.Settings.base_path}", include_in_schema=False
-)
+app.include_router(config_router, prefix=f"{config.Settings.base_path}")
 app.include_router(ipg_router, prefix=f"{config.Settings.base_path}")
 
 

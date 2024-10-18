@@ -1,7 +1,8 @@
 import logging
 
-from apps.business.models import Business
+from apps.config.models import Configuration
 from server.config import Settings
+from ufaas_fastapi_business.models import Business
 from utils import aionetwork
 
 from .exceptions import PayPingException, PurchaseDoesNotExist
@@ -13,6 +14,9 @@ async def start_purchase(business: Business, purchase: Purchase) -> dict:
     callback_url = (
         f"https://{business.domain}{Settings.base_path}/purchases/{purchase.uid}/verify"
     )
+
+    config: Configuration = await Configuration.get_config(business.name)
+
     # data = {
     #     "MerchantID": business.secret.merchant_id,
     #     "Amount": int(purchase.amount),
@@ -27,7 +31,7 @@ async def start_purchase(business: Business, purchase: Purchase) -> dict:
         "clientRefId": str(purchase.uid),
         "payerIdentity": purchase.phone,
     }
-    headers = {"Authorization": f"Bearer {business.secret.merchant_id}"}
+    headers = {"Authorization": f"Bearer {config.merchant_id}"}
 
     response = await aionetwork.aio_request(
         method="post",
@@ -62,7 +66,9 @@ async def verify_purchase(
     if purchase.status in ["SUCCESS", "FAILED"]:
         return purchase
 
-    headers = {"Authorization": f"Bearer {business.secret.merchant_id}"}
+    config: Configuration = await Configuration.get_config(business.name)
+
+    headers = {"Authorization": f"Bearer {config.merchant_id}"}
 
     data = {"amount": int(purchase.amount), "refId": refid}
     purchase.meta_data = (purchase.meta_data or {}) | kwargs
@@ -84,6 +90,8 @@ async def verify_purchase(
 
 
 async def create_proposal(purchase: Purchase, business: Business) -> dict:
+    config: Configuration = await Configuration.get_config(business.name)
+
     proposal_data = ProposalCreateSchema(
         amount=purchase.amount,
         description=purchase.description,
@@ -91,7 +99,7 @@ async def create_proposal(purchase: Purchase, business: Business) -> dict:
         task_status="init",
         participants=[
             {"wallet_id": purchase.wallet_id, "amount": purchase.amount},
-            {"wallet_id": business.config.income_wallet_id, "amount": -purchase.amount},
+            {"wallet_id": config.income_wallet_id, "amount": -purchase.amount},
         ],
         note=None,
         meta_data=None,
@@ -105,7 +113,7 @@ async def create_proposal(purchase: Purchase, business: Business) -> dict:
 
     response = await aionetwork.aio_request(
         method="post",
-        url=business.config.core_url,
+        url=f"{business.config.core_url}api/v1/proposals/",
         data=proposal_data,
         headers=headers,
         raise_exception=False,

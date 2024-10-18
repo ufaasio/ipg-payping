@@ -1,31 +1,18 @@
-import uuid
 from datetime import datetime
-from decimal import Decimal
 
 from fastapi_mongo_base.models import BusinessOwnedEntity
 from pydantic import field_serializer, field_validator
 from utils import numtools
 
 from .config import PayPingConfig
-from .schemas import PurchaseStatus
+from .schemas import PurchaseSchema, PurchaseStatus
 
 
-class Purchase(BusinessOwnedEntity):
-    wallet_id: uuid.UUID
-    amount: Decimal
-    description: str
+class Purchase(PurchaseSchema, BusinessOwnedEntity):
     callback_url: str
 
-    phone: str | None = None
-
-    is_test: bool = False
-    status: PurchaseStatus = PurchaseStatus.INIT
-
-    code: str | None = None
-
-    failure_reason: str | None = None
-    verified_at: datetime | None = None
-    ref_id: int | None = None
+    class Settings:
+        indexes = BusinessOwnedEntity.Settings.indexes
 
     @field_validator("amount", mode="before")
     def validate_amount(cls, value):
@@ -51,12 +38,14 @@ class Purchase(BusinessOwnedEntity):
         self.ref_id = ref_id
         self.status = "SUCCESS"
         self.verified_at = datetime.now()
-        await self.save()
+        await self.save_report(f'purchase successfully verified with ref_id "{ref_id}"')
+        # await self.save()
 
     async def fail(self, failure_reason: str = None):
         self.status = "FAILED"
         self.failure_reason = failure_reason
-        await self.save()
+        await self.save_report(f'purchase failed because of "{failure_reason}"')
+        # await self.save()
 
     @property
     def config(self):

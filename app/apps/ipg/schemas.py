@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Literal
 
 from fastapi_mongo_base.schemas import BusinessOwnedEntitySchema
+from fastapi_mongo_base.tasks import TaskMixin
 from pydantic import BaseModel, field_serializer, field_validator
 from utils import numtools, texttools
 
@@ -17,12 +18,12 @@ class PurchaseStatus(str, Enum):
     REFUNDED = "REFUNDED"
 
 
-class PurchaseSchema(BusinessOwnedEntitySchema):
+class PurchaseSchema(TaskMixin, BusinessOwnedEntitySchema):
     wallet_id: uuid.UUID
     amount: Decimal
 
     phone: str | None = None
-    description: str | None = None
+    description: str  # | None = None
 
     is_test: bool = False
     status: PurchaseStatus = PurchaseStatus.INIT
