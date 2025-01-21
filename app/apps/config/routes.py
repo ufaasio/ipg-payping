@@ -1,5 +1,5 @@
-from core.exceptions import BaseHTTPException
 from fastapi import Request
+from fastapi_mongo_base.core.exceptions import BaseHTTPException
 from ufaas_fastapi_business.routes import AbstractAuthRouter
 from usso.fastapi import jwt_access_security
 

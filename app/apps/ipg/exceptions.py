@@ -1,4 +1,4 @@
-from core import exceptions
+from fastapi_mongo_base.core import exceptions
 
 
 class PayPingException(exceptions.BaseHTTPException):

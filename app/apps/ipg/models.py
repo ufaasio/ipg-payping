@@ -1,30 +1,16 @@
 from datetime import datetime
 
-from fastapi_mongo_base.models import BusinessOwnedEntity
-from pydantic import field_serializer, field_validator
-from utils import numtools
+from fastapi_mongo_base.models import BusinessEntity
 
 from .config import PayPingConfig
-from .schemas import PurchaseSchema, PurchaseStatus
+from .schemas import PurchaseSchema
 
 
-class Purchase(PurchaseSchema, BusinessOwnedEntity):
+class Purchase(PurchaseSchema, BusinessEntity):
     callback_url: str
 
     class Settings:
-        indexes = BusinessOwnedEntity.Settings.indexes
-
-    @field_validator("amount", mode="before")
-    def validate_amount(cls, value):
-        return numtools.decimal_amount(value)
-
-    @field_serializer("status")
-    def serialize_status(self, value):
-        if isinstance(value, PurchaseStatus):
-            return value.value
-        if isinstance(value, str):
-            return value
-        return str(value)
+        indexes = BusinessEntity.Settings.indexes
 
     @classmethod
     async def get_purchase_by_code(cls, business_name: str, code: str):

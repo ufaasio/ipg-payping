@@ -1,9 +1,9 @@
 import logging
 
 from apps.config.models import Configuration
+from fastapi_mongo_base.utils import aionetwork
 from server.config import Settings
 from ufaas_fastapi_business.models import Business
-from utils import aionetwork
 
 from .exceptions import PayPingException, PurchaseDoesNotExist
 from .models import Purchase
@@ -14,6 +14,10 @@ async def start_purchase(business: Business, purchase: Purchase) -> dict:
     callback_url = (
         f"https://{business.domain}{Settings.base_path}/purchases/{purchase.uid}/verify"
     )
+    # TODO: fix this.
+    # I have to change it because of pixy.ir do not have token
+    if business.name == "pixy":
+        callback_url = f"https://wallet.pixiee.io{Settings.base_path}/purchases/{purchase.uid}/verify"
 
     config: Configuration = await Configuration.get_config(business.name)
 
@@ -24,8 +28,10 @@ async def start_purchase(business: Business, purchase: Purchase) -> dict:
     #     "Mobile": purchase.phone,
     #     "CallbackURL": callback_url,
     # }
+
+    # all units in Payping are in Toman
     data = {
-        "amount": int(purchase.amount),
+        "amount": int(purchase.amount // 10),
         "description": purchase.description,
         "returnUrl": callback_url,
         "clientRefId": str(purchase.uid),
@@ -70,7 +76,7 @@ async def verify_purchase(
 
     headers = {"Authorization": f"Bearer {config.merchant_id}"}
 
-    data = {"amount": int(purchase.amount), "refId": refid}
+    data = {"amount": int(purchase.amount // 10), "refId": refid}
     purchase.meta_data = (purchase.meta_data or {}) | kwargs
 
     try:
